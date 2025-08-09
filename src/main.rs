@@ -128,10 +128,13 @@ impl State {
     }
 
     fn render(&mut self) {
-        let surface_texture = self
-            .surface
-            .get_current_texture()
-            .expect("Failed to acquire swapchain texture");
+        let surface_texture = match self.surface.get_current_texture() {
+            Ok(texture) => texture,
+            Err(e) => {
+                eprintln!("Failed to get surface texture: {:?}", e);
+                return;
+            }
+        };
         let texture_view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor {
@@ -193,10 +196,15 @@ impl ApplicationHandler for App {
         _id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        let state = self.state.as_mut().unwrap();
+        let Some(state) = self.state.as_mut() else {
+            return;
+        };
         match event {
             WindowEvent::CloseRequested => {
                 println!("Close button pressed, exiting...");
+
+                self.state = None;
+
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
