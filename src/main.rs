@@ -298,6 +298,24 @@ const VERTICES: &[Vertex] = &[
 const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
 fn main() {
+    // GOAL API (so I don't forget):
+    // use rendium::prelude::*;
+    //
+    // fn main() {
+    //     let mut rd = rendium::init()
+    //              .size(600, 600)
+    //              .title("Example")
+    //              .build();
+    //
+    //     app.run(|d| {
+    //          //--Update--//
+    //          // ...
+    //          //---Draw---//
+    //          d.clear(/* Args */);
+    //          d.draw rectangle(/* Args */);
+    //     });
+    // }
+
     env_logger::init();
 
     let event_loop = EventLoop::new().unwrap();
