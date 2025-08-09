@@ -17,7 +17,8 @@ struct State {
     surface_format: wgpu::TextureFormat,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    num_vertices: u32,
+    index_buffer: wgpu::Buffer,
+    num_indices: u32,
 }
 
 impl State {
@@ -97,7 +98,13 @@ impl State {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
-        let num_vertices = VERTICES.len() as u32;
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(INDICES),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+
+        let num_indices = INDICES.len() as u32;
 
         let state = Self {
             window,
@@ -107,8 +114,9 @@ impl State {
             surface_format,
             size,
             render_pipeline,
-            num_vertices,
             vertex_buffer,
+            index_buffer,
+            num_indices,
         };
 
         state.configure_surface();
@@ -174,9 +182,10 @@ impl State {
 
         // Draw commands here
         renderpass.set_pipeline(&self.render_pipeline);
-
         renderpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        renderpass.draw(0..self.num_vertices, 0..1);
+        renderpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+
+        renderpass.draw_indexed(0..self.num_indices, 0, 0..1);
 
         drop(renderpass);
 
@@ -265,18 +274,28 @@ impl Vertex {
 
 const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [0.0, 0.5, 0.0],
-        color: [1.0, 0.0, 0.0],
+        position: [-0.0868241, 0.49240386, 0.0],
+        color: [0.5, 0.0, 0.5],
     },
     Vertex {
-        position: [-0.5, -0.5, 0.0],
-        color: [0.0, 1.0, 0.0],
+        position: [-0.49513406, 0.06958647, 0.0],
+        color: [0.0, 0.5, 0.5],
     },
     Vertex {
-        position: [0.5, -0.5, 0.0],
-        color: [0.0, 0.0, 1.0],
+        position: [-0.21918549, -0.44939706, 0.0],
+        color: [0.5, 0.5, 0.0],
+    },
+    Vertex {
+        position: [0.35966998, -0.3473291, 0.0],
+        color: [0.5, 0.5, 0.5],
+    },
+    Vertex {
+        position: [0.44147372, 0.2347359, 0.0],
+        color: [0.0, 0.0, 0.0],
     },
 ];
+
+const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
 fn main() {
     env_logger::init();
