@@ -307,7 +307,7 @@ fn main() {
     //              .title("Example")
     //              .build();
     //
-    //     app.run(|d| {
+    //     rd.run(|d| {
     //          //--Update--//
     //          // ...
     //          //---Draw---//
@@ -315,6 +315,10 @@ fn main() {
     //          d.draw rectangle(/* Args */);
     //     });
     // }
+    //  Explanation:
+    //  rendium::init() returns a RendiumInstance, but the window isn't created yet
+    //  The window is actually created in the game loop (rd.run)
+    //  There might be some "window_config" field so the user can modify the window before the loop
 
     env_logger::init();
 
