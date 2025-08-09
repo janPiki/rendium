@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use wgpu::util::DeviceExt;
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -15,6 +16,8 @@ struct State {
     surface: wgpu::Surface<'static>,
     surface_format: wgpu::TextureFormat,
     render_pipeline: wgpu::RenderPipeline,
+    vertex_buffer: wgpu::Buffer,
+    num_vertices: u32,
 }
 
 impl State {
@@ -56,7 +59,7 @@ impl State {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[],
+                buffers: &[Vertex::desc()],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
@@ -88,6 +91,14 @@ impl State {
             cache: None,
         });
 
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let num_vertices = VERTICES.len() as u32;
+
         let state = Self {
             window,
             device,
@@ -96,6 +107,8 @@ impl State {
             surface_format,
             size,
             render_pipeline,
+            num_vertices,
+            vertex_buffer,
         };
 
         state.configure_surface();
@@ -161,7 +174,9 @@ impl State {
 
         // Draw commands here
         renderpass.set_pipeline(&self.render_pipeline);
-        renderpass.draw(0..3, 0..1);
+
+        renderpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        renderpass.draw(0..self.num_vertices, 0..1);
 
         drop(renderpass);
 
@@ -219,6 +234,49 @@ impl ApplicationHandler for App {
         }
     }
 }
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    position: [f32; 3],
+    color: [f32; 3],
+}
+
+impl Vertex {
+    fn desc() -> wgpu::VertexBufferLayout<'static> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute {
+                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+            ],
+        }
+    }
+}
+
+const VERTICES: &[Vertex] = &[
+    Vertex {
+        position: [0.0, 0.5, 0.0],
+        color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+        position: [-0.5, -0.5, 0.0],
+        color: [0.0, 1.0, 0.0],
+    },
+    Vertex {
+        position: [0.5, -0.5, 0.0],
+        color: [0.0, 0.0, 1.0],
+    },
+];
 
 fn main() {
     env_logger::init();
