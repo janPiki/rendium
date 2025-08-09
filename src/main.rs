@@ -4,7 +4,7 @@ use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
     event_loop::{ControlFlow, EventLoop},
-    window::Window,
+    window::{Window, WindowAttributes},
 };
 
 struct State {
@@ -180,7 +180,7 @@ impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes())
+                .create_window(WindowAttributes::default().with_title("Rendium"))
                 .unwrap(),
         );
 
