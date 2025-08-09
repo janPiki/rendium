@@ -17,23 +17,21 @@ struct State {
 }
 
 impl State {
-    async fn new(window: Arc<Window>) -> Self {
+    async fn new(window: Arc<Window>) -> anyhow::Result<Self> {
         // Create a wgpu instance
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         // Find a GPU
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
+            .await?;
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+            .await?;
 
         let size = window.inner_size();
 
         // The surface is like where you draw things
-        let surface = instance.create_surface(window.clone()).unwrap();
+        let surface = instance.create_surface(window.clone())?;
         // No idea on these two
         let cap = surface.get_capabilities(&adapter);
         let surface_format = cap.formats[0];
@@ -49,7 +47,7 @@ impl State {
 
         state.configure_surface();
 
-        state
+        Ok(state)
     }
 
     fn get_window(&self) -> &Window {
@@ -128,7 +126,7 @@ impl ApplicationHandler for App {
                 .unwrap(),
         );
 
-        let state = pollster::block_on(State::new(window.clone()));
+        let state = pollster::block_on(State::new(window.clone())).unwrap();
         self.state = Some(state);
 
         window.request_redraw();
