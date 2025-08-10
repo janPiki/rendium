@@ -3,6 +3,7 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::{
     application::ApplicationHandler,
+    dpi::PhysicalSize,
     event::WindowEvent,
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowAttributes},
@@ -195,16 +196,33 @@ impl State {
     }
 }
 
-#[derive(Default)]
 struct RendiumInstance {
     state: Option<State>,
+    size: winit::dpi::PhysicalSize<u32>,
+    title: String,
+    callback: Box<dyn FnMut(&mut Self)>,
+}
+
+impl RendiumInstance {
+    pub fn new(size: PhysicalSize<u32>, title: String, f: Box<dyn FnMut(&mut Self) -> ()>) -> Self {
+        Self {
+            size,
+            title,
+            state: None,
+            callback: f,
+        }
+    }
 }
 
 impl ApplicationHandler for RendiumInstance {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         let window = Arc::new(
             event_loop
-                .create_window(WindowAttributes::default().with_title("Rendium"))
+                .create_window(
+                    WindowAttributes::default()
+                        .with_title(self.title.clone())
+                        .with_inner_size(self.size),
+                )
                 .unwrap(),
         );
 
@@ -220,9 +238,6 @@ impl ApplicationHandler for RendiumInstance {
         _id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        let Some(state) = self.state.as_mut() else {
-            return;
-        };
         match event {
             WindowEvent::CloseRequested => {
                 println!("Close button pressed, exiting...");
@@ -232,12 +247,26 @@ impl ApplicationHandler for RendiumInstance {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
-                state.render();
-                // Draw again
-                state.get_window().request_redraw();
+                // Since this is Rust, I have to jump through some hoops to make this work
+                // (self.callback)(self);
+
+                // Move the callback out of self
+                let mut callback = std::mem::replace(&mut self.callback, Box::new(|_| {}));
+                // Call it
+                callback(self);
+                // Return it to self
+                self.callback = callback;
+
+                if let Some(state) = self.state.as_mut() {
+                    state.render();
+                    // Draw again
+                    state.get_window().request_redraw();
+                }
             }
             WindowEvent::Resized(size) => {
-                state.resize(size);
+                if let Some(state) = self.state.as_mut() {
+                    state.resize(size);
+                }
             }
             _ => (),
         }
@@ -297,35 +326,44 @@ const VERTICES: &[Vertex] = &[
 
 const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
+struct RendiumBuilder {
+    size: winit::dpi::PhysicalSize<u32>,
+    title: String,
+}
+
+impl RendiumBuilder {
+    pub fn new() -> Self {
+        Self {
+            size: winit::dpi::PhysicalSize::new(600, 600),
+            title: "Window".to_string(),
+        }
+    }
+
+    pub fn with_size(mut self, w: u32, h: u32) -> Self {
+        self.size = winit::dpi::PhysicalSize::new(w, h);
+        self
+    }
+
+    pub fn with_title(mut self, t: &str) -> Self {
+        self.title = t.to_string();
+        self
+    }
+
+    pub fn run<F: 'static + FnMut(&mut RendiumInstance) -> ()>(&self, f: F) {
+        env_logger::init();
+
+        let event_loop = EventLoop::new().unwrap();
+
+        event_loop.set_control_flow(ControlFlow::Poll);
+
+        let mut app = RendiumInstance::new(self.size, self.title.clone(), Box::new(f));
+        event_loop.run_app(&mut app).unwrap();
+    }
+}
+
 fn main() {
-    // GOAL API (so I don't forget):
-    // use rendium::prelude::*;
-    //
-    // fn main() {
-    //     let mut rd = rendium::init()
-    //              .size(600, 600)
-    //              .title("Example")
-    //              .build();
-    //
-    //     rd.run(|d| {
-    //          //--Update--//
-    //          // ...
-    //          //---Draw---//
-    //          d.clear(/* Args */);
-    //          d.draw rectangle(/* Args */);
-    //     });
-    // }
-    //  Explanation:
-    //  rendium::init() returns a RendiumInstance, but the window isn't created yet
-    //  The window is actually created in the game loop (rd.run)
-    //  There might be some "window_config" field so the user can modify the window before the loop
-
-    env_logger::init();
-
-    let event_loop = EventLoop::new().unwrap();
-
-    event_loop.set_control_flow(ControlFlow::Poll);
-
-    let mut app = RendiumInstance::default();
-    event_loop.run_app(&mut app).unwrap();
+    RendiumBuilder::new()
+        .with_size(600, 600)
+        .with_title("Rendium")
+        .run(|_rd| ());
 }
