@@ -198,8 +198,6 @@ pub struct RendiumInstance {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
     callback: Box<dyn FnMut(&mut Self)>,
-    should_close: bool,
-    exiting: bool,
 }
 
 impl RendiumInstance {
@@ -209,25 +207,20 @@ impl RendiumInstance {
             title,
             state: None,
             callback: f,
-            should_close: false,
-            exiting: false,
         }
     }
 
     pub fn draw<F: FnOnce(&mut RendiumDrawHandle)>(&mut self, color: Color, f: F) {
+        let mut draw_handle = RendiumDrawHandle::new(self.size);
+
+        f(&mut draw_handle);
         if let Some(state) = &mut self.state {
-            let mut draw_handle = RendiumDrawHandle::new();
-            f(&mut draw_handle);
             state.render_with_context(&draw_handle, color);
         }
     }
 
-    pub fn should_close(&self) -> bool {
-        self.should_close
-    }
-
-    pub fn exit(&mut self) {
-        self.exiting = true;
+    pub fn get_window_size(&self) -> (u32, u32) {
+        (self.size.width, self.size.height)
     }
 }
 
@@ -255,16 +248,13 @@ impl ApplicationHandler for RendiumInstance {
         _id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        if self.exiting {
-            event_loop.exit();
-            return;
-        }
         match event {
             WindowEvent::CloseRequested => {
                 println!("Close button pressed, exiting...");
 
                 self.state = None;
-                self.should_close = true;
+
+                event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
                 // Since this is Rust, I have to jump through some hoops to make this work
@@ -286,6 +276,7 @@ impl ApplicationHandler for RendiumInstance {
                 if let Some(state) = self.state.as_mut() {
                     state.resize(size);
                 }
+                self.size = size;
             }
             _ => (),
         }
@@ -365,18 +356,24 @@ impl RendiumBuilder {
 pub struct RendiumDrawHandle {
     vertices: Vec<Vertex>,
     indices: Vec<u16>,
+    window_size: PhysicalSize<u32>,
 }
 
 impl RendiumDrawHandle {
-    pub fn new() -> Self {
+    pub fn new(window_size: PhysicalSize<u32>) -> Self {
         Self {
             vertices: Vec::new(),
             indices: Vec::new(),
+            window_size,
         }
     }
 
     pub fn add_vertex(&mut self, pos: [f32; 3], col: Color) {
-        self.vertices.push(Vertex::new(pos, col));
+        let size = self.window_size;
+        let ndc_x = (pos[0] as f32 / size.width as f32) * 2.0 - 1.0;
+        let ndc_y = 1.0 - (pos[1] as f32 / size.height as f32) * 2.0;
+        let ndc_pos = [ndc_x, ndc_y, pos[2]];
+        self.vertices.push(Vertex::new(ndc_pos, col));
     }
 
     pub fn add_index(&mut self, i: u16) {
