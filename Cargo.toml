@@ -1,0 +1,19 @@
+[package]
+name = "rendium"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+env_logger = "0.11.8"
+pollster = "0.4.0"
+wgpu = "26.0.1"
+winit = "0.30.12"
+bytemuck = {version = "1.16", features = ["derive"]}
+
+[profile.dev]
+debug = true
+opt-level = 0
+
+[workspace]
+members = ["test-game"]

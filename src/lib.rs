@@ -196,7 +196,7 @@ impl State {
     }
 }
 
-struct RendiumInstance {
+pub struct RendiumInstance {
     state: Option<State>,
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
@@ -275,7 +275,7 @@ impl ApplicationHandler for RendiumInstance {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct Vertex {
+pub struct Vertex {
     position: [f32; 3],
     color: [f32; 3],
 }
@@ -326,7 +326,7 @@ const VERTICES: &[Vertex] = &[
 
 const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
-struct RendiumBuilder {
+pub struct RendiumBuilder {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
 }
@@ -359,11 +359,4 @@ impl RendiumBuilder {
         let mut app = RendiumInstance::new(self.size, self.title.clone(), Box::new(f));
         event_loop.run_app(&mut app).unwrap();
     }
-}
-
-fn main() {
-    RendiumBuilder::new()
-        .with_size(600, 600)
-        .with_title("Rendium")
-        .run(|_rd| ());
 }
