@@ -360,8 +360,8 @@ impl RendiumDrawHandle {
         }
     }
 
-    pub fn add_vertex(&mut self, v: Vertex) {
-        self.vertices.push(v);
+    pub fn add_vertex(&mut self, pos: [f32; 3], col: Color) {
+        self.vertices.push(Vertex::new(pos, col));
     }
 
     pub fn add_index(&mut self, i: u16) {
