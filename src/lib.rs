@@ -17,9 +17,6 @@ struct State {
     surface: wgpu::Surface<'static>,
     surface_format: wgpu::TextureFormat,
     render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
 }
 
 impl State {
@@ -93,20 +90,6 @@ impl State {
             cache: None,
         });
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(INDICES),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-
-        let num_indices = INDICES.len() as u32;
-
         let state = Self {
             window,
             device,
@@ -115,9 +98,6 @@ impl State {
             surface_format,
             size,
             render_pipeline,
-            vertex_buffer,
-            index_buffer,
-            num_indices,
         };
 
         state.configure_surface();
@@ -149,7 +129,26 @@ impl State {
         self.configure_surface();
     }
 
-    fn render(&mut self) {
+    fn render_with_contex(&mut self, draw_handle: &RendiumDrawHandle, color: Color) {
+        if draw_handle.vertices.is_empty() || draw_handle.indices.is_empty() {
+            return;
+        }
+
+        let vertex_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(&draw_handle.vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        let index_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(&draw_handle.indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+
         let surface_texture = match self.surface.get_current_texture() {
             Ok(texture) => texture,
             Err(e) => {
@@ -165,14 +164,15 @@ impl State {
             });
 
         let mut encoder = self.device.create_command_encoder(&Default::default());
+
         let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: None,
+            label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &texture_view,
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::BLUE),
+                    load: wgpu::LoadOp::Clear(color.into()),
                     store: wgpu::StoreOp::Store,
                 },
             })],
@@ -181,15 +181,12 @@ impl State {
             occlusion_query_set: None,
         });
 
-        // Draw commands here
         renderpass.set_pipeline(&self.render_pipeline);
-        renderpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        renderpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-        renderpass.draw_indexed(0..self.num_indices, 0, 0..1);
+        renderpass.set_vertex_buffer(0, vertex_buffer.slice(..));
+        renderpass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        renderpass.draw_indexed(0..draw_handle.indices.len() as u32, 0, 0..1);
 
         drop(renderpass);
-
         self.queue.submit([encoder.finish()]);
         self.window.pre_present_notify();
         surface_texture.present();
@@ -210,6 +207,14 @@ impl RendiumInstance {
             title,
             state: None,
             callback: f,
+        }
+    }
+
+    pub fn draw<F: FnOnce(&mut RendiumDrawHandle)>(&mut self, color: Color, f: F) {
+        if let Some(state) = &mut self.state {
+            let mut draw_handle = RendiumDrawHandle::new();
+            f(&mut draw_handle);
+            state.render_with_contex(&draw_handle, color);
         }
     }
 }
@@ -258,7 +263,6 @@ impl ApplicationHandler for RendiumInstance {
                 self.callback = callback;
 
                 if let Some(state) = self.state.as_mut() {
-                    state.render();
                     // Draw again
                     state.get_window().request_redraw();
                 }
@@ -276,8 +280,8 @@ impl ApplicationHandler for RendiumInstance {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    position: [f32; 3],
-    color: [f32; 3],
+    pub position: [f32; 3],
+    pub color: [f32; 3],
 }
 
 impl Vertex {
@@ -300,31 +304,6 @@ impl Vertex {
         }
     }
 }
-
-const VERTICES: &[Vertex] = &[
-    Vertex {
-        position: [-0.0868241, 0.49240386, 0.0],
-        color: [0.5, 0.0, 0.5],
-    },
-    Vertex {
-        position: [-0.49513406, 0.06958647, 0.0],
-        color: [0.0, 0.5, 0.5],
-    },
-    Vertex {
-        position: [-0.21918549, -0.44939706, 0.0],
-        color: [0.5, 0.5, 0.0],
-    },
-    Vertex {
-        position: [0.35966998, -0.3473291, 0.0],
-        color: [0.5, 0.5, 0.5],
-    },
-    Vertex {
-        position: [0.44147372, 0.2347359, 0.0],
-        color: [0.0, 0.0, 0.0],
-    },
-];
-
-const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
 pub struct RendiumBuilder {
     size: winit::dpi::PhysicalSize<u32>,
@@ -358,5 +337,48 @@ impl RendiumBuilder {
 
         let mut app = RendiumInstance::new(self.size, self.title.clone(), Box::new(f));
         event_loop.run_app(&mut app).unwrap();
+    }
+}
+
+pub struct RendiumDrawHandle {
+    vertices: Vec<Vertex>,
+    indices: Vec<u16>,
+}
+
+impl RendiumDrawHandle {
+    pub fn new() -> Self {
+        Self {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        }
+    }
+
+    pub fn add_vertex(&mut self, v: Vertex) {
+        self.vertices.push(v);
+    }
+
+    pub fn add_index(&mut self, i: u16) {
+        self.indices.push(i);
+    }
+}
+
+pub struct Color(pub u8, pub u8, pub u8, pub u8);
+
+impl Color {
+    pub const WHITE: Self = Self(255, 255, 255, 255);
+    pub const BLACK: Self = Self(0, 0, 0, 255);
+    pub const RED: Self = Self(255, 0, 0, 255);
+    pub const GREEN: Self = Self(0, 255, 0, 255);
+    pub const BLUE: Self = Self(0, 0, 255, 255);
+}
+
+impl From<Color> for wgpu::Color {
+    fn from(c: Color) -> Self {
+        wgpu::Color {
+            r: c.0 as f64 / 255.0,
+            g: c.1 as f64 / 255.0,
+            b: c.2 as f64 / 255.0,
+            a: c.3 as f64 / 255.0,
+        }
     }
 }
