@@ -129,7 +129,7 @@ impl State {
         self.configure_surface();
     }
 
-    fn render_with_contex(&mut self, draw_handle: &RendiumDrawHandle, color: Color) {
+    fn render_with_context(&mut self, draw_handle: &RendiumDrawHandle, color: Color) {
         if draw_handle.vertices.is_empty() || draw_handle.indices.is_empty() {
             return;
         }
@@ -198,6 +198,8 @@ pub struct RendiumInstance {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
     callback: Box<dyn FnMut(&mut Self)>,
+    should_close: bool,
+    exiting: bool,
 }
 
 impl RendiumInstance {
@@ -207,6 +209,8 @@ impl RendiumInstance {
             title,
             state: None,
             callback: f,
+            should_close: false,
+            exiting: false,
         }
     }
 
@@ -214,8 +218,16 @@ impl RendiumInstance {
         if let Some(state) = &mut self.state {
             let mut draw_handle = RendiumDrawHandle::new();
             f(&mut draw_handle);
-            state.render_with_contex(&draw_handle, color);
+            state.render_with_context(&draw_handle, color);
         }
+    }
+
+    pub fn should_close(&self) -> bool {
+        self.should_close
+    }
+
+    pub fn exit(&mut self) {
+        self.exiting = true;
     }
 }
 
@@ -243,13 +255,16 @@ impl ApplicationHandler for RendiumInstance {
         _id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
+        if self.exiting {
+            event_loop.exit();
+            return;
+        }
         match event {
             WindowEvent::CloseRequested => {
                 println!("Close button pressed, exiting...");
 
                 self.state = None;
-
-                event_loop.exit();
+                self.should_close = true;
             }
             WindowEvent::RedrawRequested => {
                 // Since this is Rust, I have to jump through some hoops to make this work
@@ -399,4 +414,8 @@ impl From<Color> for [f32; 4] {
             c.3 as f32 / 255.0,
         ]
     }
+}
+
+pub fn init() -> RendiumBuilder {
+    RendiumBuilder::new()
 }
