@@ -2,6 +2,12 @@
 name = "rendium"
 version = "0.1.0"
 edition = "2024"
+authors = ["jan Piki"]
+description = "A work in progress graphics library"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["wgpu", "graphics"]
+categories = ["graphics", "game-development"]
 
 [dependencies]
 anyhow = "1.0.98"
