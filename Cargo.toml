@@ -8,7 +8,9 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["wgpu", "graphics"]
 categories = ["graphics", "game-development"]
-include = ["src/default.wgsl"]
+include = [
+  "src/**"
+]
 
 [dependencies]
 anyhow = "1.0.98"
