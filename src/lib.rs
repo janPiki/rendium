@@ -281,7 +281,7 @@ impl ApplicationHandler for RendiumInstance {
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pub position: [f32; 3],
-    pub color: [f32; 3],
+    pub color: [f32; 4],
 }
 
 impl Vertex {
@@ -293,14 +293,21 @@ impl Vertex {
                 wgpu::VertexAttribute {
                     offset: 0,
                     shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
+                    format: wgpu::VertexFormat::Float32x4,
                 },
                 wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    offset: std::mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
+                    format: wgpu::VertexFormat::Float32x4,
                 },
             ],
+        }
+    }
+
+    pub fn new(position: [f32; 3], col: Color) -> Self {
+        Self {
+            position,
+            color: col.into(),
         }
     }
 }
@@ -380,5 +387,16 @@ impl From<Color> for wgpu::Color {
             b: c.2 as f64 / 255.0,
             a: c.3 as f64 / 255.0,
         }
+    }
+}
+
+impl From<Color> for [f32; 4] {
+    fn from(c: Color) -> Self {
+        [
+            c.0 as f32 / 255.0,
+            c.1 as f32 / 255.0,
+            c.2 as f32 / 255.0,
+            c.3 as f32 / 255.0,
+        ]
     }
 }
