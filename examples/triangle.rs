@@ -1,4 +1,4 @@
-use rendium::*;
+use rendium::types::Color;
 
 fn main() {
     rendium::init()

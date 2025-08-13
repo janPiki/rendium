@@ -129,7 +129,7 @@ impl State {
         self.configure_surface();
     }
 
-    fn render_with_context(&mut self, draw_handle: &RendiumDrawHandle, color: Color) {
+    fn render_with_context(&mut self, draw_handle: &RendiumDrawHandle, color: types::Color) {
         if draw_handle.vertices.is_empty() || draw_handle.indices.is_empty() {
             return;
         }
@@ -210,7 +210,7 @@ impl RendiumInstance {
         }
     }
 
-    pub fn draw<F: FnOnce(&mut RendiumDrawHandle)>(&mut self, color: Color, f: F) {
+    pub fn draw<F: FnOnce(&mut RendiumDrawHandle)>(&mut self, color: types::Color, f: F) {
         let mut draw_handle = RendiumDrawHandle::new(self.size);
 
         f(&mut draw_handle);
@@ -310,7 +310,7 @@ impl Vertex {
         }
     }
 
-    pub fn new(position: [f32; 3], col: Color) -> Self {
+    pub fn new(position: [f32; 3], col: types::Color) -> Self {
         Self {
             position,
             color: col.into(),
@@ -368,7 +368,7 @@ impl RendiumDrawHandle {
         }
     }
 
-    pub fn add_vertex(&mut self, pos: [f32; 3], col: Color) {
+    pub fn add_vertex(&mut self, pos: [f32; 3], col: types::Color) {
         let size = self.window_size;
         let ndc_x = (pos[0] as f32 / size.width as f32) * 2.0 - 1.0;
         let ndc_y = 1.0 - (pos[1] as f32 / size.height as f32) * 2.0;
@@ -381,40 +381,8 @@ impl RendiumDrawHandle {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct Color(pub u8, pub u8, pub u8, pub u8);
-
-impl Color {
-    pub const WHITE: Self = Self(255, 255, 255, 255);
-    pub const BLACK: Self = Self(0, 0, 0, 255);
-    pub const RED: Self = Self(255, 0, 0, 255);
-    pub const GREEN: Self = Self(0, 255, 0, 255);
-    pub const BLUE: Self = Self(0, 0, 255, 255);
-}
-
-impl From<Color> for wgpu::Color {
-    fn from(c: Color) -> Self {
-        wgpu::Color {
-            r: c.0 as f64 / 255.0,
-            g: c.1 as f64 / 255.0,
-            b: c.2 as f64 / 255.0,
-            a: c.3 as f64 / 255.0,
-        }
-    }
-}
-
-impl From<Color> for [f32; 4] {
-    fn from(c: Color) -> Self {
-        [
-            c.0 as f32 / 255.0,
-            c.1 as f32 / 255.0,
-            c.2 as f32 / 255.0,
-            c.3 as f32 / 255.0,
-        ]
-    }
-}
-
 pub mod shapes;
+pub mod types;
 
 pub fn init() -> RendiumBuilder {
     RendiumBuilder::new()

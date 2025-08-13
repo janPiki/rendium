@@ -1,25 +1,27 @@
 // This module has methods for drawing shapes
-use crate::{Color, RendiumDrawHandle};
+use crate::RendiumDrawHandle;
+use crate::types::{Color, Vector2};
 
 pub trait DrawShape {
-    fn draw_rect(&mut self, x: i32, y: i32, width: i32, height: i32, col: Color);
+    fn draw_rect(&mut self, pos: Vector2, width: i32, height: i32, col: Color);
     fn draw_rect_lines(
         &mut self,
-        x: i32,
-        y: i32,
+        pos: Vector2,
         width: i32,
         height: i32,
-        thickness: i32,
+        thickness: f32,
         col: Color,
     );
-    fn draw_circle(&mut self, cx: i32, cy: i32, radius: i32, col: Color, segments: usize);
-    fn draw_triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32, col: Color);
-    fn draw_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, thickness: i32, col: Color);
+    fn draw_circle(&mut self, pos: Vector2, radius: i32, col: Color, segments: usize);
+    fn draw_triangle(&mut self, p1: Vector2, p2: Vector2, p3: Vector2, col: Color);
+    fn draw_line(&mut self, from: Vector2, to: Vector2, thickness: i32, col: Color);
 }
 
 impl DrawShape for RendiumDrawHandle {
-    fn draw_rect(&mut self, x: i32, y: i32, width: i32, height: i32, col: Color) {
+    fn draw_rect(&mut self, pos: Vector2, width: i32, height: i32, col: Color) {
         let base = self.vertices.len() as u16;
+        let x = pos.0 as i32;
+        let y = pos.1 as i32;
 
         self.add_vertex([x as f32, y as f32, 0.0], col);
         self.add_vertex([x as f32, (y + height) as f32, 0.0], col);
@@ -37,27 +39,38 @@ impl DrawShape for RendiumDrawHandle {
 
     fn draw_rect_lines(
         &mut self,
-        x: i32,
-        y: i32,
+        pos: Vector2,
         width: i32,
         height: i32,
-        thickness: i32,
+        thickness: f32,
         col: Color,
     ) {
-        self.draw_rect(x, y, width, thickness, col);
-        self.draw_rect(x, y + height - thickness, width, thickness, col);
-        self.draw_rect(x, y, thickness, height, col);
-        self.draw_rect(x + width - thickness, y, thickness, height, col);
+        let x = pos.0;
+        let y = pos.1;
+        self.draw_rect(pos, width, thickness as i32, col);
+        self.draw_rect(
+            (x, y + height as f32 - thickness).into(),
+            width,
+            thickness as i32,
+            col,
+        );
+        self.draw_rect(pos, thickness as i32, height, col);
+        self.draw_rect(
+            (x + width as f32 - thickness, y).into(),
+            thickness as i32,
+            height,
+            col,
+        );
     }
 
-    fn draw_circle(&mut self, cx: i32, cy: i32, radius: i32, col: Color, segments: usize) {
+    fn draw_circle(&mut self, pos: Vector2, radius: i32, col: Color, segments: usize) {
         if segments < 3 {
             return;
         }
 
         let base = self.vertices.len() as u16;
-        let cx = cx as f32;
-        let cy = cy as f32;
+        let cx = pos.0;
+        let cy = pos.1;
         let radius = radius as f32;
 
         // center
@@ -78,7 +91,14 @@ impl DrawShape for RendiumDrawHandle {
         }
     }
 
-    fn draw_triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32, col: Color) {
+    fn draw_triangle(&mut self, p1: Vector2, p2: Vector2, p3: Vector2, col: Color) {
+        let x1 = p1.0;
+        let y1 = p1.1;
+        let x2 = p2.0;
+        let y2 = p2.0;
+        let x3 = p3.1;
+        let y3 = p3.1;
+
         let base = self.vertices.len() as u16;
 
         self.add_vertex([x1 as f32, y1 as f32, 0.0], col);
@@ -90,7 +110,12 @@ impl DrawShape for RendiumDrawHandle {
         self.add_index(base + 2);
     }
 
-    fn draw_line(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, thickness: i32, col: Color) {
+    fn draw_line(&mut self, from: Vector2, to: Vector2, thickness: i32, col: Color) {
+        let x1 = from.0;
+        let y1 = from.1;
+        let x2 = to.0;
+        let y2 = to.1;
+
         let dx = (x2 - x1) as f32;
         let dy = (y2 - y1) as f32;
 

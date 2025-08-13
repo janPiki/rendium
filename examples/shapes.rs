@@ -1,5 +1,5 @@
 use rendium::shapes::*;
-use rendium::*;
+use rendium::types::Color;
 
 fn main() {
     rendium::init()
