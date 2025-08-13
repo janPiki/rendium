@@ -1,6 +1,6 @@
 [package]
 name = "rendium"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 authors = ["jan Piki"]
 description = "A work in progress graphics library"
@@ -24,5 +24,3 @@ bytemuck = {version = "1.16", features = ["derive"]}
 debug = true
 opt-level = 0
 
-[workspace]
-members = ["test-game"]

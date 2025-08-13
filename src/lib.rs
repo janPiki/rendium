@@ -66,7 +66,7 @@ impl State {
                 entry_point: Some("fs_main"),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: surface_format,
-                    blend: Some(wgpu::BlendState::REPLACE),
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
@@ -381,6 +381,7 @@ impl RendiumDrawHandle {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Color(pub u8, pub u8, pub u8, pub u8);
 
 impl Color {
@@ -412,6 +413,8 @@ impl From<Color> for [f32; 4] {
         ]
     }
 }
+
+pub mod shapes;
 
 pub fn init() -> RendiumBuilder {
     RendiumBuilder::new()
