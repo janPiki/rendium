@@ -9,7 +9,7 @@ fn main() {
             rd.draw(Color::BLACK, |d| {
                 d.draw_rect(250, 250, 200, 200, Color::BLUE);
                 d.draw_circle(100, 100, 100, Color::WHITE, 20);
-                d.draw_line(100, 600, 600, 600, 50, Color::RED);
+                d.draw_line(100, 600, 600, 600, 10, Color::RED);
             });
         });
 }
