@@ -1,6 +1,6 @@
 // Some useful types
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color(pub u8, pub u8, pub u8, pub u8);
 
 impl Color {
@@ -33,7 +33,7 @@ impl From<Color> for [f32; 4] {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Vector2(pub f32, pub f32);
 
 impl From<Vector2> for [f32; 2] {
@@ -48,6 +48,7 @@ impl From<(f32, f32)> for Vector2 {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Vector3(pub f32, pub f32, pub f32);
 
 impl From<Vector3> for [f32; 3] {
@@ -62,6 +63,7 @@ impl From<(f32, f32, f32)> for Vector3 {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Vector4(pub f32, pub f32, pub f32, pub f32);
 
 impl From<Vector4> for [f32; 4] {

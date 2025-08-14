@@ -381,6 +381,8 @@ impl RendiumDrawHandle {
     }
 }
 
+pub mod input;
+mod input_wrapper;
 pub mod shapes;
 pub mod types;
 

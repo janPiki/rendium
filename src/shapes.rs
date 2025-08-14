@@ -47,7 +47,7 @@ impl DrawShape for RendiumDrawHandle {
     ) {
         let x = pos.0;
         let y = pos.1;
-        self.draw_rect(pos, width, thickness as i32, col);
+        self.draw_rect(pos.clone(), width, thickness as i32, col);
         self.draw_rect(
             (x, y + height as f32 - thickness).into(),
             width,
