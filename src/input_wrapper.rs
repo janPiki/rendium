@@ -134,3 +134,28 @@ impl From<KeyCode> for Key {
         }
     }
 }
+
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+pub enum MouseButton {
+    Left,
+    Rigth,
+    Middle,
+    Back,
+    Forward,
+    Other(u16),
+}
+
+impl From<winit::event::MouseButton> for MouseButton {
+    fn from(b: winit::event::MouseButton) -> Self {
+        use winit::event::MouseButton as MB;
+
+        match b {
+            MB::Left => MouseButton::Left,
+            MB::Right => MouseButton::Rigth,
+            MB::Middle => MouseButton::Middle,
+            MB::Back => MouseButton::Back,
+            MB::Forward => MouseButton::Forward,
+            MB::Other(n) => MouseButton::Other(n),
+        }
+    }
+}
