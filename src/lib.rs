@@ -4,8 +4,9 @@ use wgpu::util::DeviceExt;
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
-    event::WindowEvent,
+    event::{ElementState, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
+    keyboard::PhysicalKey,
     window::{Window, WindowAttributes},
 };
 
@@ -198,6 +199,7 @@ pub struct RendiumInstance {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
     callback: Box<dyn FnMut(&mut Self)>,
+    input: input::RendiumInput,
 }
 
 impl RendiumInstance {
@@ -207,6 +209,7 @@ impl RendiumInstance {
             title,
             state: None,
             callback: f,
+            input: input::RendiumInput::new(),
         }
     }
 
@@ -250,8 +253,6 @@ impl ApplicationHandler for RendiumInstance {
     ) {
         match event {
             WindowEvent::CloseRequested => {
-                println!("Close button pressed, exiting...");
-
                 self.state = None;
 
                 event_loop.exit();
@@ -270,6 +271,7 @@ impl ApplicationHandler for RendiumInstance {
                 if let Some(state) = self.state.as_mut() {
                     // Draw again
                     state.get_window().request_redraw();
+                    self.input.update();
                 }
             }
             WindowEvent::Resized(size) => {
@@ -277,6 +279,23 @@ impl ApplicationHandler for RendiumInstance {
                     state.resize(size);
                 }
                 self.size = size;
+            }
+            WindowEvent::KeyboardInput {
+                device_id: _,
+                event,
+                is_synthetic: _,
+            } => {
+                match event.physical_key {
+                    PhysicalKey::Code(key) => {
+                        if event.state == ElementState::Pressed {
+                            self.input.add_key(key.into())
+                        } else {
+                            self.input.remove_key(key.into())
+                        }
+                    }
+                    PhysicalKey::Unidentified(_key) => self.input.add_key(input::Key::Unsupported),
+                }
+                self.input.set_key_char(event.text);
             }
             _ => (),
         }

@@ -1,5 +1,6 @@
 use winit::keyboard::KeyCode;
 
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Key {
     A,
     B,
