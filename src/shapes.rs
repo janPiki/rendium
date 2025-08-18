@@ -116,8 +116,8 @@ impl DrawShape for RendiumDrawHandle {
         let x2 = to.0;
         let y2 = to.1;
 
-        let dx = (x2 - x1);
-        let dy = (y2 - y1);
+        let dx = x2 - x1;
+        let dy = y2 - y1;
 
         let length = (dx * dx + dy * dy).sqrt();
         if length == 0.0 {
