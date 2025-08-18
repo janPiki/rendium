@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use wgpu::util::DeviceExt;
 use winit::{
@@ -200,6 +201,8 @@ pub struct RendiumInstance {
     title: String,
     callback: Box<dyn FnMut(&mut Self)>,
     input: input::RendiumInput,
+    delta_time: Duration,
+    last_frame_time: Instant,
 }
 
 impl RendiumInstance {
@@ -210,6 +213,8 @@ impl RendiumInstance {
             state: None,
             callback: f,
             input: input::RendiumInput::new(),
+            delta_time: Duration::ZERO,
+            last_frame_time: Instant::now(),
         }
     }
 
@@ -224,6 +229,10 @@ impl RendiumInstance {
 
     pub fn get_window_size(&self) -> (u32, u32) {
         (self.size.width, self.size.height)
+    }
+
+    pub fn delta_time(&self) -> Duration {
+        self.delta_time
     }
 }
 
@@ -258,6 +267,10 @@ impl ApplicationHandler for RendiumInstance {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
+                let now = Instant::now();
+                self.delta_time = now - self.last_frame_time;
+                self.last_frame_time = now;
+
                 // Since this is Rust, I have to jump through some hoops to make this work
                 // (self.callback)(self);
 
