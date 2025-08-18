@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
-    event::{ElementState, WindowEvent},
+    event::{ElementState, MouseScrollDelta, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     keyboard::PhysicalKey,
     window::{Window, WindowAttributes},
@@ -288,15 +288,44 @@ impl ApplicationHandler for RendiumInstance {
                 match event.physical_key {
                     PhysicalKey::Code(key) => {
                         if event.state == ElementState::Pressed {
-                            self.input.add_key(key.into())
+                            self.input.add_key(key.into());
                         } else {
-                            self.input.remove_key(key.into())
+                            self.input.remove_key(key.into());
                         }
                     }
-                    PhysicalKey::Unidentified(_key) => self.input.add_key(input::Key::Unsupported),
+                    PhysicalKey::Unidentified(_) => {
+                        if event.state == ElementState::Pressed {
+                            self.input.add_key(input::Key::Unsupported);
+                        } else {
+                            self.input.remove_key(input::Key::Unsupported);
+                        }
+                    }
                 }
                 self.input.set_key_char(event.text);
             }
+            WindowEvent::MouseInput {
+                device_id: _,
+                state,
+                button,
+            } => match state {
+                ElementState::Pressed => self.input.add_mouse_button(button.into()),
+                ElementState::Released => self.input.remove_mouse_button(button.into()),
+            },
+            WindowEvent::CursorMoved {
+                device_id: _,
+                position,
+            } => {
+                self.input
+                    .update_mouse_pos(types::Vector2::from(<(f32, f32)>::from(position)));
+            }
+            WindowEvent::MouseWheel {
+                device_id: _,
+                delta,
+                phase: _,
+            } => match delta {
+                MouseScrollDelta::LineDelta(_, y) => self.input.update_scroll_delta(y),
+                MouseScrollDelta::PixelDelta(p) => self.input.update_scroll_delta(p.y as f32),
+            },
             _ => (),
         }
     }

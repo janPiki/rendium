@@ -95,8 +95,8 @@ impl DrawShape for RendiumDrawHandle {
         let x1 = p1.0;
         let y1 = p1.1;
         let x2 = p2.0;
-        let y2 = p2.0;
-        let x3 = p3.1;
+        let y2 = p2.1;
+        let x3 = p3.0;
         let y3 = p3.1;
 
         let base = self.vertices.len() as u16;
