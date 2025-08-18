@@ -379,13 +379,9 @@ impl Vertex {
     }
 }
 
-// "Very complex type used"
-type SetupCallback = Option<Box<dyn FnOnce(&mut RendiumInstance)>>;
-
 pub struct RendiumBuilder {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
-    setup_callback: SetupCallback,
 }
 
 impl Default for RendiumBuilder {
@@ -399,7 +395,6 @@ impl RendiumBuilder {
         Self {
             size: winit::dpi::PhysicalSize::new(600, 600),
             title: "Window".to_string(),
-            setup_callback: None,
         }
     }
 
@@ -422,18 +417,9 @@ impl RendiumBuilder {
 
         let mut app = RendiumInstance::new(self.size, self.title.clone(), Box::new(f));
 
-        if let Some(setup_fn) = self.setup_callback.take() {
-            setup_fn(&mut app);
-        }
-
         event_loop.run_app(&mut app)?;
 
         Ok(())
-    }
-
-    pub fn setup<F: 'static + FnOnce(&mut RendiumInstance)>(mut self, f: F) -> Self {
-        self.setup_callback = Some(Box::new(f));
-        self
     }
 }
 
