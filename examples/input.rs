@@ -13,8 +13,10 @@ fn main() {
                 Color::RED
             };
 
+            let pos = rd.get_mouse_pos();
+
             rd.draw(Color::BLACK, |d| {
-                d.draw_circle((300.0, 300.0).into(), 100, color, 40);
+                d.draw_circle(pos, 100, color, 40);
             });
         });
 }
