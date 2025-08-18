@@ -101,9 +101,9 @@ impl DrawShape for RendiumDrawHandle {
 
         let base = self.vertices.len() as u16;
 
-        self.add_vertex([x1 as f32, y1 as f32, 0.0], col);
-        self.add_vertex([x2 as f32, y2 as f32, 0.0], col);
-        self.add_vertex([x3 as f32, y3 as f32, 0.0], col);
+        self.add_vertex([x1, y1, 0.0], col);
+        self.add_vertex([x2, y2, 0.0], col);
+        self.add_vertex([x3, y3, 0.0], col);
 
         self.add_index(base);
         self.add_index(base + 1);
@@ -116,8 +116,8 @@ impl DrawShape for RendiumDrawHandle {
         let x2 = to.0;
         let y2 = to.1;
 
-        let dx = (x2 - x1) as f32;
-        let dy = (y2 - y1) as f32;
+        let dx = (x2 - x1);
+        let dy = (y2 - y1);
 
         let length = (dx * dx + dy * dy).sqrt();
         if length == 0.0 {
@@ -135,10 +135,10 @@ impl DrawShape for RendiumDrawHandle {
         let offset_x = nx * half_thickness;
         let offset_y = ny * half_thickness;
 
-        let p1 = [x1 as f32 + offset_x, y1 as f32 + offset_y, 0.0];
-        let p2 = [x1 as f32 - offset_x, y1 as f32 - offset_y, 0.0];
-        let p3 = [x2 as f32 + offset_x, y2 as f32 + offset_y, 0.0];
-        let p4 = [x2 as f32 - offset_x, y2 as f32 - offset_y, 0.0];
+        let p1 = [x1 + offset_x, y1 + offset_y, 0.0];
+        let p2 = [x1 - offset_x, y1 - offset_y, 0.0];
+        let p3 = [x2 + offset_x, y2 + offset_y, 0.0];
+        let p4 = [x2 - offset_x, y2 - offset_y, 0.0];
 
         let base = self.vertices.len() as u16;
 

@@ -206,7 +206,7 @@ pub struct RendiumInstance {
 }
 
 impl RendiumInstance {
-    pub fn new(size: PhysicalSize<u32>, title: String, f: Box<dyn FnMut(&mut Self) -> ()>) -> Self {
+    pub fn new(size: PhysicalSize<u32>, title: String, f: Box<dyn FnMut(&mut Self)>) -> Self {
         Self {
             size,
             title,
@@ -384,6 +384,12 @@ pub struct RendiumBuilder {
     title: String,
 }
 
+impl Default for RendiumBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RendiumBuilder {
     pub fn new() -> Self {
         Self {
@@ -402,7 +408,7 @@ impl RendiumBuilder {
         self
     }
 
-    pub fn run<F: 'static + FnMut(&mut RendiumInstance) -> ()>(&self, f: F) {
+    pub fn run<F: 'static + FnMut(&mut RendiumInstance)>(&self, f: F) {
         env_logger::init();
 
         let event_loop = EventLoop::new().unwrap();
@@ -431,8 +437,8 @@ impl RendiumDrawHandle {
 
     pub fn add_vertex(&mut self, pos: [f32; 3], col: types::Color) {
         let size = self.window_size;
-        let ndc_x = (pos[0] as f32 / size.width as f32) * 2.0 - 1.0;
-        let ndc_y = 1.0 - (pos[1] as f32 / size.height as f32) * 2.0;
+        let ndc_x = (pos[0] / size.width as f32) * 2.0 - 1.0;
+        let ndc_y = 1.0 - (pos[1] / size.height as f32) * 2.0;
         let ndc_pos = [ndc_x, ndc_y, pos[2]];
         self.vertices.push(Vertex::new(ndc_pos, col));
     }

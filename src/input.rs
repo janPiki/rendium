@@ -18,6 +18,12 @@ pub struct RendiumInput {
     scroll_delta: f32,
 }
 
+impl Default for RendiumInput {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RendiumInput {
     pub fn new() -> Self {
         Self {
