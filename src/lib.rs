@@ -379,9 +379,13 @@ impl Vertex {
     }
 }
 
+// "Very complex type used"
+type SetupCallback = Option<Box<dyn FnOnce(&mut RendiumInstance)>>;
+
 pub struct RendiumBuilder {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
+    setup_callback: SetupCallback,
 }
 
 impl Default for RendiumBuilder {
@@ -395,6 +399,7 @@ impl RendiumBuilder {
         Self {
             size: winit::dpi::PhysicalSize::new(600, 600),
             title: "Window".to_string(),
+            setup_callback: None,
         }
     }
 
@@ -408,15 +413,27 @@ impl RendiumBuilder {
         self
     }
 
-    pub fn run<F: 'static + FnMut(&mut RendiumInstance)>(&self, f: F) {
+    pub fn run<F: 'static + FnMut(&mut RendiumInstance)>(&mut self, f: F) -> anyhow::Result<()> {
         env_logger::init();
 
-        let event_loop = EventLoop::new().unwrap();
+        let event_loop = EventLoop::new()?;
 
         event_loop.set_control_flow(ControlFlow::Poll);
 
         let mut app = RendiumInstance::new(self.size, self.title.clone(), Box::new(f));
-        event_loop.run_app(&mut app).unwrap();
+
+        if let Some(setup_fn) = self.setup_callback.take() {
+            setup_fn(&mut app);
+        }
+
+        event_loop.run_app(&mut app)?;
+
+        Ok(())
+    }
+
+    pub fn setup<F: 'static + FnOnce(&mut RendiumInstance)>(mut self, f: F) -> Self {
+        self.setup_callback = Some(Box::new(f));
+        self
     }
 }
 
@@ -451,6 +468,7 @@ impl RendiumDrawHandle {
 pub mod input;
 mod input_wrapper;
 pub mod shapes;
+pub mod texture;
 pub mod types;
 
 pub fn init() -> RendiumBuilder {
