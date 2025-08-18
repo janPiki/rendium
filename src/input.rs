@@ -39,12 +39,14 @@ impl RendiumInput {
     }
 
     pub fn update(&mut self) {
-        let _ = std::mem::replace(&mut self.prev_keys, self.curr_keys.clone());
-        let _ = std::mem::replace(&mut self.prev_mouse_button, self.curr_mouse_button.clone());
+        self.prev_keys = self.curr_keys.clone();
+        self.prev_mouse_button = self.curr_mouse_button.clone();
+        self.scroll_delta = 0.0;
+        self.mouse_pos_delta = Vector2::zero();
     }
 
     pub fn update_mouse_pos(&mut self, new_mouse_pos: Vector2) {
-        self.mouse_pos_delta = self.mouse_pos.clone() - new_mouse_pos.clone();
+        self.mouse_pos_delta = new_mouse_pos - self.mouse_pos;
         self.mouse_pos = new_mouse_pos;
     }
 

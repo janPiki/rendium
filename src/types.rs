@@ -35,7 +35,7 @@ impl From<Color> for [f32; 4] {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vector2(pub f32, pub f32);
 
 impl Vector2 {
@@ -68,7 +68,7 @@ impl From<(f32, f32)> for Vector2 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vector3(pub f32, pub f32, pub f32);
 
 impl Vector3 {
@@ -101,7 +101,7 @@ impl From<(f32, f32, f32)> for Vector3 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vector4(pub f32, pub f32, pub f32, pub f32);
 
 impl Vector4 {

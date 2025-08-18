@@ -124,7 +124,7 @@ impl From<KeyCode> for Key {
             KeyCode::ArrowLeft => Key::LeftArrow,
             KeyCode::ArrowRight => Key::RightArrow,
             KeyCode::ArrowDown => Key::DownArrow,
-            KeyCode::ArrowUp => Key::DownArrow,
+            KeyCode::ArrowUp => Key::UpArrow,
             KeyCode::AltLeft | KeyCode::AltRight => Key::Alt,
             KeyCode::ControlLeft | KeyCode::ControlRight => Key::Ctrl,
             KeyCode::ShiftLeft | KeyCode::ShiftRight => Key::Shift,
@@ -138,7 +138,7 @@ impl From<KeyCode> for Key {
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum MouseButton {
     Left,
-    Rigth,
+    Right,
     Middle,
     Back,
     Forward,
@@ -151,7 +151,7 @@ impl From<winit::event::MouseButton> for MouseButton {
 
         match b {
             MB::Left => MouseButton::Left,
-            MB::Right => MouseButton::Rigth,
+            MB::Right => MouseButton::Right,
             MB::Middle => MouseButton::Middle,
             MB::Back => MouseButton::Back,
             MB::Forward => MouseButton::Forward,
