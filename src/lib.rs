@@ -94,12 +94,12 @@ impl State {
 
         let state = Self {
             window,
-            device,
             queue,
-            surface,
+            device,
             surface_format,
             size,
             render_pipeline,
+            surface,
         };
 
         state.configure_surface();
@@ -131,7 +131,7 @@ impl State {
         self.configure_surface();
     }
 
-    fn render_with_context(&mut self, draw_handle: &RendiumDrawHandle, color: types::Color) {
+    fn render(&mut self, draw_handle: &RendiumDrawHandle, color: types::Color) {
         if draw_handle.vertices.is_empty() || draw_handle.indices.is_empty() {
             return;
         }
@@ -200,6 +200,7 @@ pub struct RendiumInstance {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
     callback: Box<dyn FnMut(&mut Self)>,
+    setup_callback: Option<Box<dyn FnOnce(&mut RendiumInstance)>>,
     input: input::RendiumInput,
     delta_time: Duration,
     last_frame_time: Instant,
@@ -212,6 +213,7 @@ impl RendiumInstance {
             title,
             state: None,
             callback: f,
+            setup_callback: None,
             input: input::RendiumInput::new(),
             delta_time: Duration::ZERO,
             last_frame_time: Instant::now(),
@@ -223,7 +225,7 @@ impl RendiumInstance {
 
         f(&mut draw_handle);
         if let Some(state) = &mut self.state {
-            state.render_with_context(&draw_handle, color);
+            state.render(&draw_handle, color);
         }
     }
 
@@ -250,6 +252,11 @@ impl ApplicationHandler for RendiumInstance {
 
         let state = pollster::block_on(State::new(window.clone())).unwrap();
         self.state = Some(state);
+
+        let setup_callback = self.setup_callback.take();
+        if let Some(cb) = setup_callback {
+            cb(self);
+        }
 
         window.request_redraw();
     }
@@ -382,6 +389,7 @@ impl Vertex {
 pub struct RendiumBuilder {
     size: winit::dpi::PhysicalSize<u32>,
     title: String,
+    setup_callback: Option<Box<dyn FnOnce(&mut RendiumInstance)>>,
 }
 
 impl Default for RendiumBuilder {
@@ -395,6 +403,7 @@ impl RendiumBuilder {
         Self {
             size: winit::dpi::PhysicalSize::new(600, 600),
             title: "Window".to_string(),
+            setup_callback: None,
         }
     }
 
@@ -420,6 +429,11 @@ impl RendiumBuilder {
         event_loop.run_app(&mut app)?;
 
         Ok(())
+    }
+
+    pub fn setup<F: 'static + FnOnce(&mut RendiumInstance)>(mut self, f: F) -> Self {
+        self.setup_callback = Some(Box::new(f));
+        self
     }
 }
 
