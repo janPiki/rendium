@@ -20,6 +20,7 @@ pollster = "0.4.0"
 wgpu = "26.0.1"
 winit = "0.30.12"
 bytemuck = {version = "1.16", features = ["derive"]}
+png = "0.17.16"
 
 [profile.dev]
 incremental = false

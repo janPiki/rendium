@@ -19,14 +19,18 @@ pub trait DrawShape {
 
 impl DrawShape for RendiumDrawHandle {
     fn draw_rect(&mut self, pos: Vector2, width: i32, height: i32, col: Color) {
-        let base = self.vertices.len() as u16;
+        let base = self.vertices.len() as u32;
         let x = pos.0 as i32;
         let y = pos.1 as i32;
 
-        self.add_vertex([x as f32, y as f32, 0.0], col);
-        self.add_vertex([x as f32, (y + height) as f32, 0.0], col);
-        self.add_vertex([(x + width) as f32, y as f32, 0.0], col);
-        self.add_vertex([(x + width) as f32, (y + height) as f32, 0.0], col);
+        self.add_vertex([x as f32, y as f32, 0.0], col, [0.0, 0.0]);
+        self.add_vertex([x as f32, (y + height) as f32, 0.0], col, [0.0, 0.0]);
+        self.add_vertex([(x + width) as f32, y as f32, 0.0], col, [0.0, 0.0]);
+        self.add_vertex(
+            [(x + width) as f32, (y + height) as f32, 0.0],
+            col,
+            [0.0, 0.0],
+        );
 
         self.add_index(base);
         self.add_index(base + 1);
@@ -68,26 +72,26 @@ impl DrawShape for RendiumDrawHandle {
             return;
         }
 
-        let base = self.vertices.len() as u16;
+        let base = self.vertices.len() as u32;
         let cx = pos.0;
         let cy = pos.1;
         let radius = radius as f32;
 
         // center
-        self.add_vertex([cx, cy, 0.0], col);
+        self.add_vertex([cx, cy, 0.0], col, [0.0, 0.0]);
 
         for i in 0..segments {
             let theta = -(i as f32) / segments as f32 * std::f32::consts::TAU;
             let x = cx + radius * theta.cos();
             let y = cy + radius * theta.sin();
-            self.add_vertex([x, y, 0.0], col);
+            self.add_vertex([x, y, 0.0], col, [0.0, 0.0]);
         }
 
         for i in 0..segments {
             let next = if i + 1 == segments { 0 } else { i + 1 };
             self.add_index(base);
-            self.add_index(base + i as u16 + 1);
-            self.add_index(base + next as u16 + 1);
+            self.add_index(base + i as u32 + 1);
+            self.add_index(base + next as u32 + 1);
         }
     }
 
@@ -99,11 +103,11 @@ impl DrawShape for RendiumDrawHandle {
         let x3 = p3.0;
         let y3 = p3.1;
 
-        let base = self.vertices.len() as u16;
+        let base = self.vertices.len() as u32;
 
-        self.add_vertex([x1, y1, 0.0], col);
-        self.add_vertex([x2, y2, 0.0], col);
-        self.add_vertex([x3, y3, 0.0], col);
+        self.add_vertex([x1, y1, 0.0], col, [0.0, 0.0]);
+        self.add_vertex([x2, y2, 0.0], col, [0.0, 0.0]);
+        self.add_vertex([x3, y3, 0.0], col, [0.0, 0.0]);
 
         self.add_index(base);
         self.add_index(base + 1);
@@ -140,12 +144,12 @@ impl DrawShape for RendiumDrawHandle {
         let p3 = [x2 + offset_x, y2 + offset_y, 0.0];
         let p4 = [x2 - offset_x, y2 - offset_y, 0.0];
 
-        let base = self.vertices.len() as u16;
+        let base = self.vertices.len() as u32;
 
-        self.add_vertex(p1, col);
-        self.add_vertex(p2, col);
-        self.add_vertex(p3, col);
-        self.add_vertex(p4, col);
+        self.add_vertex(p1, col, [0.0, 0.0]);
+        self.add_vertex(p2, col, [0.0, 0.0]);
+        self.add_vertex(p3, col, [0.0, 0.0]);
+        self.add_vertex(p4, col, [0.0, 0.0]);
 
         self.add_index(base);
         self.add_index(base + 2);

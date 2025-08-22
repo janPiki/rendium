@@ -5,7 +5,7 @@ pub struct Texture {
     height: u32,
 }
 
-pub fn load_png(path: &str) -> anyhow::Result<Texture> {
+fn load_texture(path: &str) -> anyhow::Result<Texture> {
     use std::fs::File;
     use std::io::BufReader;
 

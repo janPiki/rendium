@@ -46,10 +46,32 @@ impl State {
             source: wgpu::ShaderSource::Wgsl(include_str!("default.wgsl").into()),
         });
 
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Bind Group Layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[&bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -153,6 +175,10 @@ impl State {
 
         let surface_texture = match self.surface.get_current_texture() {
             Ok(texture) => texture,
+            Err(wgpu::SurfaceError::Outdated) => {
+                self.configure_surface();
+                return;
+            }
             Err(e) => {
                 eprintln!("Failed to get surface texture: {:?}", e);
                 return;
@@ -356,6 +382,7 @@ impl ApplicationHandler for RendiumInstance {
 pub struct Vertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
+    pub uv: [f32; 2],
 }
 
 impl Vertex {
@@ -374,14 +401,21 @@ impl Vertex {
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x4,
                 },
+                wgpu::VertexAttribute {
+                    offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 4]>())
+                        as wgpu::BufferAddress,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
             ],
         }
     }
 
-    pub fn new(position: [f32; 3], col: types::Color) -> Self {
+    pub fn new(position: [f32; 3], col: types::Color, uv: [f32; 2]) -> Self {
         Self {
             position,
             color: col.into(),
+            uv,
         }
     }
 }
@@ -439,7 +473,7 @@ impl RendiumBuilder {
 
 pub struct RendiumDrawHandle {
     vertices: Vec<Vertex>,
-    indices: Vec<u16>,
+    indices: Vec<u32>,
     window_size: PhysicalSize<u32>,
 }
 
@@ -452,15 +486,15 @@ impl RendiumDrawHandle {
         }
     }
 
-    pub fn add_vertex(&mut self, pos: [f32; 3], col: types::Color) {
+    pub fn add_vertex(&mut self, pos: [f32; 3], col: types::Color, uv: [f32; 2]) {
         let size = self.window_size;
         let ndc_x = (pos[0] / size.width as f32) * 2.0 - 1.0;
         let ndc_y = 1.0 - (pos[1] / size.height as f32) * 2.0;
         let ndc_pos = [ndc_x, ndc_y, pos[2]];
-        self.vertices.push(Vertex::new(ndc_pos, col));
+        self.vertices.push(Vertex::new(ndc_pos, col, uv));
     }
 
-    pub fn add_index(&mut self, i: u16) {
+    pub fn add_index(&mut self, i: u32) {
         self.indices.push(i);
     }
 }
