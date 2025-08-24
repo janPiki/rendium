@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -212,6 +213,22 @@ impl State {
         renderpass.set_pipeline(&self.render_pipeline);
         renderpass.set_vertex_buffer(0, vertex_buffer.slice(..));
         renderpass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+
+        if let Some(texture) = draw_handle
+            .vertices
+            .first()
+            .map(|v| v.tex_index)
+            .and_then(|idx| {
+                draw_handle
+                    .textures
+                    .iter()
+                    .nth(idx as usize)
+                    .map(|(_, v)| v)
+            })
+        {
+            renderpass.set_bind_group(0, &texture.bind_group, &[]);
+        }
+
         renderpass.draw_indexed(0..draw_handle.indices.len() as u32, 0, 0..1);
 
         drop(renderpass);
@@ -230,6 +247,7 @@ pub struct RendiumInstance {
     input: input::RendiumInput,
     delta_time: Duration,
     last_frame_time: Instant,
+    texture_storage: HashMap<String, texture::GPUTexture>,
 }
 
 impl RendiumInstance {
@@ -243,11 +261,12 @@ impl RendiumInstance {
             input: input::RendiumInput::new(),
             delta_time: Duration::ZERO,
             last_frame_time: Instant::now(),
+            texture_storage: HashMap::new(),
         }
     }
 
     pub fn draw<F: FnOnce(&mut RendiumDrawHandle)>(&mut self, color: types::Color, f: F) {
-        let mut draw_handle = RendiumDrawHandle::new(self.size);
+        let mut draw_handle = RendiumDrawHandle::new(self.size, self.texture_storage.clone());
 
         f(&mut draw_handle);
         if let Some(state) = &mut self.state {
@@ -485,14 +504,19 @@ pub struct RendiumDrawHandle {
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
     window_size: PhysicalSize<u32>,
+    textures: HashMap<String, texture::GPUTexture>,
 }
 
 impl RendiumDrawHandle {
-    pub fn new(window_size: PhysicalSize<u32>) -> Self {
+    pub fn new(
+        window_size: PhysicalSize<u32>,
+        textures: HashMap<String, texture::GPUTexture>,
+    ) -> Self {
         Self {
             vertices: Vec::new(),
             indices: Vec::new(),
             window_size,
+            textures,
         }
     }
 

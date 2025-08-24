@@ -1,3 +1,8 @@
+use crate::{
+    RendiumDrawHandle, RendiumInstance,
+    types::{Color, Vector2},
+};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Texture {
     data: Vec<u8>,
@@ -24,12 +29,19 @@ fn load_texture(path: &str) -> anyhow::Result<Texture> {
     })
 }
 
+#[derive(Clone)]
+pub struct GPUTexture {
+    pub bind_group: wgpu::BindGroup,
+    sampler: wgpu::Sampler,
+    view: wgpu::TextureView,
+}
+
 fn create_gpu_texture(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     bind_group_layout: &wgpu::BindGroupLayout,
     texture: &Texture,
-) -> (wgpu::TextureView, wgpu::Sampler, wgpu::BindGroup) {
+) -> GPUTexture {
     let size = wgpu::Extent3d {
         width: texture.width,
         height: texture.height,
@@ -89,5 +101,69 @@ fn create_gpu_texture(
         ],
     });
 
-    (view, sampler, bind_group)
+    GPUTexture {
+        bind_group,
+        sampler,
+        view,
+    }
+}
+
+pub trait TextureLoad {
+    fn load_texture(&mut self, filename: &str, tex_name: &str) -> anyhow::Result<()>;
+}
+
+impl TextureLoad for RendiumInstance {
+    fn load_texture(&mut self, filename: &str, tex_name: &str) -> anyhow::Result<()> {
+        if let Some(state) = &self.state {
+            let texture = load_texture(filename)?;
+            let bind_group_layout = state.render_pipeline.get_bind_group_layout(0);
+            let gpu_texture =
+                create_gpu_texture(&state.device, &state.queue, &bind_group_layout, &texture);
+            self.texture_storage
+                .insert(tex_name.to_string(), gpu_texture);
+        }
+
+        Ok(())
+    }
+}
+
+pub trait DrawTexture {
+    fn draw_texture(&mut self, name: &str, pos: Vector2, size: Vector2, col: Color);
+}
+
+impl DrawTexture for RendiumDrawHandle {
+    fn draw_texture(&mut self, name: &str, pos: Vector2, size: Vector2, col: Color) {
+        let tex_index = match get_texture_index(self, name) {
+            Some(i) => i,
+            None => {
+                return;
+            }
+        };
+
+        let Vector2(x, y) = pos;
+        let Vector2(w, h) = size;
+
+        let base = self.vertices.len() as u32;
+
+        self.add_vertex([x, y, 0.0], col, [0.0, 0.0], tex_index);
+        self.add_vertex([x + w, y, 0.0], col, [1.0, 0.0], tex_index);
+        self.add_vertex([x + w, y + h, 0.0], col, [1.0, 1.0], tex_index);
+        self.add_vertex([x, y + h, 0.0], col, [0.0, 1.0], tex_index);
+
+        self.add_index(base);
+        self.add_index(base + 1);
+        self.add_index(base + 2);
+
+        self.add_index(base);
+        self.add_index(base + 2);
+        self.add_index(base + 3);
+    }
+}
+
+fn get_texture_index(d: &RendiumDrawHandle, name: &str) -> Option<u32> {
+    d.textures
+        .keys()
+        .enumerate()
+        .find(|(_, key)| key == &name)
+        .map(|(i, _)| i as u32)
 }
