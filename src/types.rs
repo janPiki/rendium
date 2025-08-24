@@ -1,6 +1,6 @@
 // Some useful types
 
-use std::ops::Sub;
+use std::ops::{Add, Mul, Neg, Sub};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color(pub u8, pub u8, pub u8, pub u8);
@@ -11,6 +11,23 @@ impl Color {
     pub const RED: Self = Self(255, 0, 0, 255);
     pub const GREEN: Self = Self(0, 255, 0, 255);
     pub const BLUE: Self = Self(0, 0, 255, 255);
+
+    pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self(r, g, b, a)
+    }
+
+    pub fn rgb(r: u8, g: u8, b: u8) -> Self {
+        Self(r, g, b, 255)
+    }
+
+    pub fn to_linear(self) -> [f32; 4] {
+        [
+            (self.0 as f32 / 255.0).powf(2.2),
+            (self.1 as f32 / 255.0).powf(2.2),
+            (self.2 as f32 / 255.0).powf(2.2),
+            self.3 as f32 / 255.0,
+        ]
+    }
 }
 
 impl From<Color> for wgpu::Color {
@@ -46,6 +63,34 @@ impl Vector2 {
     pub fn zero() -> Self {
         Self(0.0, 0.0)
     }
+
+    pub fn length(&self) -> f32 {
+        (self.0 * self.0 + self.1 * self.1).sqrt()
+    }
+
+    pub fn normalized(self) -> Self {
+        let len = self.length();
+        if len != 0.0 {
+            Self(self.0 / len, self.1 / len)
+        } else {
+            self
+        }
+    }
+
+    pub fn dot(self, other: Self) -> f32 {
+        self.0 * other.0 + self.1 * other.1
+    }
+
+    pub fn distance(self, other: Self) -> f32 {
+        (self - other).length()
+    }
+
+    pub fn lerp(self, other: Self, t: f32) -> Self {
+        Self(
+            self.0 + (other.0 - self.0) * t,
+            self.1 + (other.1 - self.1) * t,
+        )
+    }
 }
 
 impl Sub for Vector2 {
@@ -53,6 +98,38 @@ impl Sub for Vector2 {
 
     fn sub(self, other: Self) -> Self::Output {
         Self(self.0 - other.0, self.1 - other.1)
+    }
+}
+
+impl Add for Vector2 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0, self.1 + rhs.1)
+    }
+}
+
+impl Mul for Vector2 {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0, self.1 * rhs.1)
+    }
+}
+
+impl Mul<f32> for Vector2 {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self(self.0 * rhs, self.1 * rhs)
+    }
+}
+
+impl Neg for Vector2 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self(-self.0, -self.1)
     }
 }
 
@@ -79,6 +156,43 @@ impl Vector3 {
     pub fn zero() -> Self {
         Self(0.0, 0.0, 0.0)
     }
+
+    pub fn length(&self) -> f32 {
+        (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
+    }
+
+    pub fn normalized(self) -> Self {
+        let len = self.length();
+        if len != 0.0 {
+            Self(self.0 / len, self.1 / len, self.2 / len)
+        } else {
+            self
+        }
+    }
+
+    pub fn dot(self, other: Self) -> f32 {
+        self.0 * other.0 + self.1 * other.1 + self.2 * other.2
+    }
+
+    pub fn cross(self, other: Self) -> Self {
+        Self(
+            self.1 * other.2 - self.2 * other.1,
+            self.2 * other.0 - self.0 * other.2,
+            self.0 * other.1 - self.1 * other.0,
+        )
+    }
+
+    pub fn distance(self, other: Self) -> f32 {
+        (self - other).length()
+    }
+
+    pub fn lerp(self, other: Self, t: f32) -> Self {
+        Self(
+            self.0 + (other.0 - self.0) * t,
+            self.1 + (other.1 - self.1) * t,
+            self.2 + (other.2 - self.2) * t,
+        )
+    }
 }
 
 impl Sub for Vector3 {
@@ -86,6 +200,38 @@ impl Sub for Vector3 {
 
     fn sub(self, other: Self) -> Self::Output {
         Self(self.0 - other.0, self.1 - other.1, self.2 - other.2)
+    }
+}
+
+impl Add for Vector3 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2)
+    }
+}
+
+impl Mul for Vector3 {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0, self.1 * rhs.1, self.2 * rhs.2)
+    }
+}
+
+impl Mul<f32> for Vector3 {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self(self.0 * rhs, self.1 * rhs, self.2 * rhs)
+    }
+}
+
+impl Neg for Vector3 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self(-self.0, -self.1, -self.2)
     }
 }
 
