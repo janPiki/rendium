@@ -383,6 +383,7 @@ pub struct Vertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
     pub uv: [f32; 2],
+    pub tex_index: u32,
 }
 
 impl Vertex {
@@ -407,15 +408,24 @@ impl Vertex {
                     shader_location: 2,
                     format: wgpu::VertexFormat::Float32x2,
                 },
+                wgpu::VertexAttribute {
+                    offset: (std::mem::size_of::<[f32; 3]>()
+                        + std::mem::size_of::<[f32; 4]>()
+                        + std::mem::size_of::<[f32; 2]>())
+                        as wgpu::BufferAddress,
+                    shader_location: 3,
+                    format: wgpu::VertexFormat::Uint32,
+                },
             ],
         }
     }
 
-    pub fn new(position: [f32; 3], col: types::Color, uv: [f32; 2]) -> Self {
+    pub fn new(position: [f32; 3], col: types::Color, uv: [f32; 2], tex_index: u32) -> Self {
         Self {
             position,
             color: col.into(),
             uv,
+            tex_index,
         }
     }
 }
@@ -486,12 +496,12 @@ impl RendiumDrawHandle {
         }
     }
 
-    pub fn add_vertex(&mut self, pos: [f32; 3], col: types::Color, uv: [f32; 2]) {
+    pub fn add_vertex(&mut self, pos: [f32; 3], col: types::Color, uv: [f32; 2], tex_index: u32) {
         let size = self.window_size;
         let ndc_x = (pos[0] / size.width as f32) * 2.0 - 1.0;
         let ndc_y = 1.0 - (pos[1] / size.height as f32) * 2.0;
         let ndc_pos = [ndc_x, ndc_y, pos[2]];
-        self.vertices.push(Vertex::new(ndc_pos, col, uv));
+        self.vertices.push(Vertex::new(ndc_pos, col, uv, tex_index));
     }
 
     pub fn add_index(&mut self, i: u32) {
